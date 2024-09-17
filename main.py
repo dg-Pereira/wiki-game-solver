@@ -2,14 +2,25 @@ import requests
 from bs4 import BeautifulSoup
 
 RANDOM_URL = "https://en.wikipedia.org/wiki/Special:Random"
-PHILOSOPHY_URL = "https://en.wikipedia.org/wiki/Philosophy"
-#RANDOM_URL = "https://en.wikipedia.org/wiki/Gangnam_for_Freedom"
+PHILOSOPHY_URL = "https://www.wikipedia.org/wiki/Philosophy"
+#RANDOM_URL = "https://en.wikipedia.org/wiki/Sound"
 
 def get_url_links(url, write_to_file = False):
     def clean_filter(a):
-        if not url.endswith(a['href']) and \
-            a['href'].startswith("/wiki/") and \
-            not a['href'][6:].startswith(("Main_Page", "Talk:", "Category:", "Template:", "Template_talk:", "Special:", "Help:", "File:", "Portal:", "Wikipedia:")):
+        if a.find_parent('table', class_='infobox'): #if there is an ancestor (recursively) that is a table with the infobox class
+            return False
+        elif a.find_parent('div', role='note'):
+            return False
+        elif a.find_parent('figcaption'):
+            return False
+        elif a.find_parent('table', class_="sidebar"):
+            return False
+        elif a.find_parent('div', class_="description"):
+            return False
+        
+        if (not url.endswith(a['href']) and # prevent loops by not going to current page
+            a['href'].startswith("/wiki/") and #only get links to other wikipedua pages
+            not a['href'][6:].startswith(("Main_Page", "Talk:", "Category:", "Template:", "Template_talk:", "Special:", "Help:", "File:", "Portal:", "Wikipedia:"))):
                 return True
         else:
             return False
@@ -59,9 +70,6 @@ def get_philosophy_chain(start_url=RANDOM_URL):
 
         if curr_url in chain:
             break
-    if found:
-        return True, chain
-    else:
-        return False, chain
+    return found, chain
 
 print(get_philosophy_chain())
